@@ -1,5 +1,5 @@
-// Получаем доступ к Telegram API
-const tg = window.Telegram.WebApp; 
+// Подключаем Telegram API
+const tg = window.Telegram.WebApp;
 
 // Разворачиваем Mini App на весь экран
 tg.expand(); 
@@ -42,6 +42,16 @@ document.addEventListener("keydown", (e) => {
 
 gameCanvas.addEventListener("click", flap); // Клик по холсту
 
+// Функция для генерации труб
+function createPipe() {
+    const pipeHeight = Math.floor(Math.random() * (gameCanvas.height / 2)); // Высота трубы
+    pipes.push({
+        x: gameCanvas.width,
+        top: pipeHeight,
+        bottom: gameCanvas.height - pipeHeight - 100,
+    });
+}
+
 // Основная функция игры (обновление экрана)
 function gameLoop() {
     birdVelocity += gravity; // Применяем гравитацию
@@ -50,6 +60,36 @@ function gameLoop() {
     // Ограничиваем положение птички, чтобы она не выходила за пределы экрана
     if (birdY < 0) birdY = 0;
     if (birdY > gameCanvas.height) birdY = gameCanvas.height;
+
+    // Добавляем новые трубы каждые 90 кадров
+    if (Math.random() < 0.02) {
+        createPipe();
+    }
+
+    // Обновляем и рисуем трубы
+    pipes.forEach((pipe, index) => {
+        pipe.x -= 2; // Двигаем трубы влево
+        ctx.fillStyle = "#00ff00"; // Цвет труб
+        ctx.fillRect(pipe.x, 0, 40, pipe.top); // Верхняя труба
+        ctx.fillRect(pipe.x, gameCanvas.height - pipe.bottom, 40, pipe.bottom); // Нижняя труба
+
+        // Удаляем трубы, которые вышли за пределы экрана
+        if (pipe.x + 40 < 0) {
+            pipes.splice(index, 1);
+            score++; // Увеличиваем счет за проход трубы
+        }
+    });
+
+    // Проверка на столкновение с трубами
+    pipes.forEach(pipe => {
+        if (50 + 10 > pipe.x && 50 - 10 < pipe.x + 40) { // Проверка X
+            if (birdY - 10 < pipe.top || birdY + 10 > gameCanvas.height - pipe.bottom) { // Проверка Y
+                gameRunning = false; // Игра закончена
+                tg.MainButton.setText("Играть снова");
+                tg.MainButton.show();
+            }
+        }
+    });
 
     // Очистка экрана перед отрисовкой нового кадра
     ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
