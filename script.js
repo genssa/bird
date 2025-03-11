@@ -1,89 +1,71 @@
-const tg = window.Telegram.WebApp;
-tg.expand(); // Разворачивает Mini App на весь экран
+// Получаем доступ к Telegram API
+const tg = window.Telegram.WebApp; 
 
-// Обработчик кликов кнопки Telegram
-tg.MainButton.setText("Начать игру");
+// Разворачиваем Mini App на весь экран
+tg.expand(); 
+
+// Отображаем кнопку "Начать заново" внизу экрана
+tg.MainButton.setText("Начать заново");
 tg.MainButton.show();
+
+// При нажатии на кнопку "Начать заново" перезапускаем игру
 tg.onEvent("mainButtonClicked", () => {
-    location.reload(); // Перезапуск игры
+    location.reload(); // Перезагружаем страницу (перезапуск игры)
 });
+
+// Создаем холст для игры
 const gameCanvas = document.createElement("canvas");
 const ctx = gameCanvas.getContext("2d");
 gameCanvas.width = 320;
 gameCanvas.height = 480;
 document.body.appendChild(gameCanvas);
 
-// Подключаем Telegram API
-const tg = window.Telegram.WebApp;
-tg.expand();
+// Переменные игры
+let birdY = 150;          // Начальная позиция птички по Y
+let birdVelocity = 0;     // Начальная скорость птички
+const gravity = 0.5;      // Сила гравитации
+const jump = -8;          // Сила прыжка
+let pipes = [];           // Массив для труб
+let score = 0;            // Счет
+let gameRunning = true;   // Статус игры
 
-// Переменные
-let birdY = 150;
-let birdVelocity = 0;
-const gravity = 0.5;
-const jump = -8;
-let pipes = [];
-let score = 0;
-let gameRunning = true;
-
-// Обработчик кликов
+// Обработчик клика по экрану или нажатия пробела
 function flap() {
-    birdVelocity = jump;
+    birdVelocity = jump; // Птичка подскакивает
 }
 
 document.addEventListener("keydown", (e) => {
-    if (e.code === "Space") flap();
+    if (e.code === "Space") {
+        flap(); // Нажатие пробела
+    }
 });
 
-gameCanvas.addEventListener("click", flap);
+gameCanvas.addEventListener("click", flap); // Клик по холсту
 
-// Генерация труб
-function addPipe() {
-    let pipeHeight = Math.floor(Math.random() * 150) + 100;
-    pipes.push({ x: gameCanvas.width, height: pipeHeight });
-}
-setInterval(addPipe, 1500);
-
-// Основной игровой цикл
+// Основная функция игры (обновление экрана)
 function gameLoop() {
-    if (!gameRunning) return;
-    
+    birdVelocity += gravity; // Применяем гравитацию
+    birdY += birdVelocity;   // Обновляем позицию птички
+
+    // Ограничиваем положение птички, чтобы она не выходила за пределы экрана
+    if (birdY < 0) birdY = 0;
+    if (birdY > gameCanvas.height) birdY = gameCanvas.height;
+
+    // Очистка экрана перед отрисовкой нового кадра
     ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
 
-    // Обновление птицы
-    birdVelocity += gravity;
-    birdY += birdVelocity;
-    ctx.fillStyle = "yellow";
-    ctx.fillRect(50, birdY, 20, 20);
+    // Рисуем птичку (круг)
+    ctx.beginPath();
+    ctx.arc(50, birdY, 10, 0, Math.PI * 2);
+    ctx.fillStyle = "#FF0"; // Цвет птички
+    ctx.fill();
+    ctx.closePath();
 
-    // Обновление труб
-    ctx.fillStyle = "green";
-    for (let i = 0; i < pipes.length; i++) {
-        pipes[i].x -= 2;
-        ctx.fillRect(pipes[i].x, 0, 30, pipes[i].height);
-        ctx.fillRect(pipes[i].x, pipes[i].height + 100, 30, gameCanvas.height);
-
-        // Проверка столкновений
-        if (
-            (50 < pipes[i].x + 30 && 50 + 20 > pipes[i].x &&
-                (birdY < pipes[i].height || birdY + 20 > pipes[i].height + 100)) ||
-            birdY > gameCanvas.height
-        ) {
-            gameRunning = false;
-            alert("Game Over! Score: " + score);
-            location.reload();
-        }
-
-        // Увеличение счета
-        if (pipes[i].x === 48) score++;
-    }
-
-    // Отображение счета
-    ctx.fillStyle = "black";
+    // Обновляем счет
     ctx.font = "20px Arial";
-    ctx.fillText("Score: " + score, 10, 30);
-
-    requestAnimationFrame(gameLoop);
+    ctx.fillStyle = "#000";
+    ctx.fillText("Счет: " + score, 10, 30);
 }
 
-gameLoop();
+// Вызов основной функции игры 60 раз в секунду
+setInterval(gameLoop, 1000 / 60);
