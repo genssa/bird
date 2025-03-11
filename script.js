@@ -1,3 +1,12 @@
+const tg = window.Telegram.WebApp;
+tg.expand(); // Разворачивает Mini App на весь экран
+
+// Обработчик кликов кнопки Telegram
+tg.MainButton.setText("Начать игру");
+tg.MainButton.show();
+tg.onEvent("mainButtonClicked", () => {
+    location.reload(); // Перезапуск игры
+});
 const gameCanvas = document.createElement("canvas");
 const ctx = gameCanvas.getContext("2d");
 gameCanvas.width = 320;
